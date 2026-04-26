@@ -92,7 +92,7 @@
       padding: 9px 11px;
       font-size: 12px;
       color: #374151;
-      cursor: pointer;
+      cursor: default;
       transition: all 0.15s;
     }
 
@@ -211,20 +211,6 @@
       </div>
     </div>
 
-    <div class="divider"></div>
-
-    <!-- Suggestions -->
-    <div>
-      <div class="section-title">Try asking</div>
-      <div class="suggestions">
-        <div class="suggestion">📊 我一共投了多少家公司？</div>
-        <div class="suggestion">🌍 哪个国家投的最多？</div>
-        <div class="suggestion">⏳ 有多少家还没给反馈？</div>
-        <div class="suggestion">🛂 哪个国家最容易拿工作签证？</div>
-        <div class="suggestion">📅 最近投递了哪些职位？</div>
-      </div>
-    </div>
-
     <div class="powered">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
       Real-time · <span>Live DB</span>
@@ -301,6 +287,8 @@ async function loadCountriesChart() {
 loadStats();
 loadFeedbackChart();
 loadCountriesChart();
+
+
 </script>
 </body>
 </html>
