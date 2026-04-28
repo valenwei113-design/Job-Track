@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends, Request, UploadFile, File
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -11,10 +11,13 @@ import psycopg2.extras
 import re
 import logging
 import traceback
+import base64
+import json
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from openai import OpenAI
+import anthropic
 from typing import List, Optional
 import os
 from dotenv import load_dotenv
@@ -29,6 +32,7 @@ logging.basicConfig(
 
 DEEPSEEK_API_KEY = os.environ["DEEPSEEK_API_KEY"]
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
 SQL_SYSTEM_PROMPT = """你是一个求职数据分析助手，专门帮助用户查询和分析他们的求职申请记录数据库。
 
@@ -166,6 +170,10 @@ class AuthRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     new_password: str
+
+class FeedbackRequest(BaseModel):
+    category: str = Field(default="other", max_length=50)
+    content: str = Field(min_length=1, max_length=2000)
 
 class ChatMessage(BaseModel):
     role: str
@@ -386,18 +394,38 @@ def stats_worktype(user_id: int = Depends(get_current_user)):
 
 # ── Admin endpoints ──
 
+@app.get("/admin/stats")
+def admin_stats(admin_id: int = Depends(get_admin_user)):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT COUNT(*) FROM users")
+        total_users = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM users WHERE created_at::date = CURRENT_DATE")
+        new_today = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM user_feedback")
+        total_feedback = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM invite_codes WHERE is_active=TRUE AND used_by IS NULL")
+        available_invites = cur.fetchone()[0]
+        return {
+            "total_users": total_users,
+            "new_today": new_today,
+            "total_feedback": total_feedback,
+            "available_invites": available_invites
+        }
+    finally:
+        cur.close(); conn.close()
+
+
+
 @app.get("/admin/users")
 def admin_list_users(admin_id: int = Depends(get_admin_user)):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
         cur.execute("""
-            SELECT u.id, u.email, u.is_admin, u.created_at,
-                   COUNT(a.id) as app_count
-            FROM users u
-            LEFT JOIN job_applications a ON a.user_id = u.id
-            GROUP BY u.id, u.email, u.is_admin, u.created_at
-            ORDER BY u.id
+            SELECT id, email, is_admin, created_at
+            FROM users ORDER BY id
         """)
         rows = [dict(r) for r in cur.fetchall()]
         for r in rows:
@@ -496,6 +524,91 @@ def admin_revoke_invite(code_id: int, admin_id: int = Depends(get_admin_user)):
         return {"success": True}
     finally:
         cur.close(); conn.close()
+
+# ── Feedback endpoints ──
+
+@app.post("/feedback")
+def submit_feedback(req: FeedbackRequest, user_id: int = Depends(get_current_user)):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "INSERT INTO user_feedback (user_id, category, content) VALUES (%s, %s, %s)",
+            (user_id, req.category, req.content)
+        )
+        conn.commit()
+        return {"ok": True}
+    finally:
+        cur.close(); conn.close()
+
+@app.get("/admin/feedback")
+def get_all_feedback(admin_id: int = Depends(get_admin_user)):
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    try:
+        cur.execute("""
+            SELECT uf.id, u.email, uf.category, uf.content, uf.created_at
+            FROM user_feedback uf
+            JOIN users u ON u.id = uf.user_id
+            ORDER BY uf.created_at DESC
+        """)
+        rows = []
+        for r in cur.fetchall():
+            row = dict(r)
+            if row.get("created_at"):
+                row["created_at"] = row["created_at"].isoformat()
+            rows.append(row)
+        return rows
+    finally:
+        cur.close(); conn.close()
+
+# ── Image parse endpoint ──
+
+PARSE_IMAGE_PROMPT = """Extract job application information from this image.
+Return ONLY a JSON object with these exact keys (use null for any missing or unclear field):
+{
+  "company": "company or organization name",
+  "position": "job title or role",
+  "applied_date": "date in YYYY-MM-DD format or null",
+  "location": "city, country or region",
+  "link": "URL if visible or null",
+  "work_type": "Remote, Onsite, or Hybrid or null",
+  "feedback": "application status if shown (e.g. Interview, Offer, Fail, Online Assessment) or null"
+}
+Return only the JSON object, no markdown, no explanation."""
+
+@app.post("/applications/parse-image")
+async def parse_image(file: UploadFile = File(...), user_id: int = Depends(get_current_user)):
+    if not ANTHROPIC_API_KEY:
+        raise HTTPException(status_code=501, detail="ANTHROPIC_API_KEY not configured")
+    image_data = await file.read()
+    if len(image_data) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image too large (max 10MB)")
+    b64 = base64.standard_b64encode(image_data).decode("utf-8")
+    media_type = file.content_type or "image/jpeg"
+    if media_type not in ("image/jpeg", "image/png", "image/gif", "image/webp"):
+        media_type = "image/jpeg"
+    try:
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=512,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": b64}},
+                    {"type": "text", "text": PARSE_IMAGE_PROMPT}
+                ]
+            }]
+        )
+        text = response.content[0].text.strip()
+        if text.startswith("```"):
+            text = re.sub(r"^```[a-z]*\n?", "", text).rstrip("`").strip()
+        return json.loads(text)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="AI returned unparseable response")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ── Chat endpoint ──
 

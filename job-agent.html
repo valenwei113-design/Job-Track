@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Job Track Agent</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -68,6 +70,7 @@
       display: none;
     }
     .auth-error.show { display: block; }
+
 
     /* ── App wrapper ── */
     #appWrapper {
@@ -314,6 +317,30 @@
     }
     .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 
+    /* ── Image parse area ── */
+    .img-parse-area {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; margin-bottom: 18px;
+      background: #f5f3ff; border: 1.5px dashed #c4b5fd;
+      border-radius: 9px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .img-parse-area:hover { background: #ede9fe; }
+    .img-parse-area .img-parse-icon { font-size: 20px; flex-shrink: 0; }
+    .img-parse-area .img-parse-text { flex: 1; }
+    .img-parse-area .img-parse-text .img-parse-title {
+      font-size: 13px; font-weight: 600; color: #5b21b6;
+    }
+    .img-parse-area .img-parse-text .img-parse-sub {
+      font-size: 11px; color: #7c3aed; opacity: 0.7; margin-top: 2px;
+    }
+    .img-parse-status {
+      font-size: 12px; color: #6366f1; margin-bottom: 14px;
+      min-height: 18px; display: flex; align-items: center; gap: 6px;
+    }
+    .img-parse-status.error { color: #ef4444; }
+    .img-parse-status.success { color: #10b981; }
+
     /* ── Admin tabs ── */
     .admin-tabs { display: flex; gap: 0; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; }
     .admin-tab {
@@ -397,6 +424,78 @@
     .page-btn.active { background: #6366f1; color: #fff; border-color: #6366f1; cursor: default; }
     .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+    /* ── Admin full-page view ── */
+    #adminView {
+      width: 100%; height: 100vh;
+      display: flex; flex-direction: column;
+      background: #f8f9fc; overflow: hidden;
+    }
+    #adminView.hidden { display: none; }
+    .admin-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 52px; flex-shrink: 0;
+      background: #fff; border-bottom: 1px solid #e5e7eb;
+    }
+    .admin-topbar-left { display: flex; align-items: center; gap: 10px; }
+    .admin-topbar-title { font-size: 14px; font-weight: 700; color: #111827; }
+    .admin-topbar-badge {
+      font-size: 10px; font-weight: 600; padding: 2px 8px;
+      background: #ede9fe; color: #7c3aed; border-radius: 10px;
+    }
+    .admin-topbar-right { display: flex; align-items: center; gap: 12px; }
+    .admin-layout {
+      flex: 1; display: flex; overflow: hidden;
+    }
+    .admin-nav {
+      width: 200px; flex-shrink: 0;
+      background: #fff; border-right: 1px solid #e5e7eb;
+      padding: 16px 12px; display: flex; flex-direction: column; gap: 2px;
+    }
+    .admin-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 7px; cursor: pointer;
+      font-size: 13px; font-weight: 500; color: #6b7280;
+      transition: background 0.12s, color 0.12s; border: none; background: transparent;
+      text-align: left; width: 100%;
+    }
+    .admin-nav-item:hover { background: #f3f4f6; color: #374151; }
+    .admin-nav-item.active { background: #ede9fe; color: #6366f1; font-weight: 600; }
+    .admin-nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+    .admin-content {
+      flex: 1; overflow-y: auto; padding: 28px 32px;
+    }
+    .admin-module { display: none; }
+    .admin-module.active { display: block; }
+
+    .admin-section-title {
+      font-size: 11px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;
+    }
+    .admin-stat-card {
+      background: #f9fafb; border: 1px solid #e5e7eb;
+      border-radius: 10px; padding: 14px 18px;
+    }
+    .admin-stat-label {
+      font-size: 11px; font-weight: 600; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+    }
+    .admin-stat-value { font-size: 26px; font-weight: 700; line-height: 1; }
+
+    .export-wrap { position: relative; margin-left: auto; }
+    .export-menu {
+      display: none; position: absolute; top: calc(100% + 6px); right: 0;
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1); overflow: hidden; z-index: 50; min-width: 130px;
+    }
+    .export-menu.open { display: block; }
+    .export-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 14px; font-size: 13px; color: #374151; cursor: pointer;
+      transition: background 0.12s;
+    }
+    .export-item:hover { background: #f9fafb; }
+
     @media (max-width: 768px) { .sidebar { display: none; } }
   </style>
 </head>
@@ -412,25 +511,25 @@
           <div class="auth-logo-sub">Powered by DeepSeek</div>
         </div>
       </div>
-      <div id="authTitle" class="auth-title">登录账号</div>
-      <div id="authSub" class="auth-sub">继续追踪你的求职进度</div>
+      <div id="authTitle" class="auth-title" data-i18n="authTitleLogin"></div>
+      <div id="authSub" class="auth-sub" data-i18n="authSubLogin"></div>
       <div class="auth-error" id="authError"></div>
       <div class="auth-row">
-        <label>邮箱</label>
+        <label data-i18n="authLabelEmail"></label>
         <input id="authEmail" type="email" placeholder="your@email.com" autocomplete="email">
       </div>
       <div class="auth-row">
-        <label>密码</label>
+        <label data-i18n="authLabelPassword"></label>
         <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password">
       </div>
       <div class="auth-row" id="inviteRow" style="display:none">
-        <label>邀请码</label>
-        <input id="authInviteCode" type="text" placeholder="请输入邀请码">
+        <label data-i18n="authLabelInvite"></label>
+        <input id="authInviteCode" type="text" data-i18n-placeholder="authInvitePlaceholder">
       </div>
-      <button class="auth-btn" id="authBtn" onclick="submitAuth()">登录</button>
+      <button class="auth-btn" id="authBtn" onclick="submitAuth()" data-i18n="authBtnLogin"></button>
       <div class="auth-toggle">
-        <span id="authToggleText">还没有账号？</span>
-        <a onclick="toggleAuthMode()"><span id="authToggleLink">立即注册</span></a>
+        <span id="authToggleText" data-i18n="authToggleToRegister"></span>
+        <a onclick="toggleAuthMode()"><span id="authToggleLink" data-i18n="authToggleLinkRegister"></span></a>
       </div>
     </div>
   </div>
@@ -450,24 +549,30 @@
 
       <div class="user-row">
         <span class="user-email" id="userEmail">—</span>
-        <button class="logout-btn" onclick="logout()">退出</button>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <button id="langToggle" onclick="toggleLang()" style="font-size:11px;font-weight:600;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:2px 7px;cursor:pointer;">EN</button>
+          <button class="logout-btn" onclick="logout()" data-i18n="logoutBtn"></button>
+        </div>
       </div>
 
       <button class="add-btn" onclick="toggleChat()">💬 Ask AI</button>
-      <button class="admin-btn" id="adminEntrance" onclick="openAdmin()" style="display:none">⚙️ 用户管理</button>
+      <div style="display:flex;gap:8px;">
+        <button class="add-btn" onclick="openFeedback()" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);font-size:11px;padding:8px 4px;" data-i18n="feedbackBtn"></button>
+        <button class="add-btn" onclick="openDonate()" style="flex:1;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:11px;padding:8px 4px;" data-i18n="donateBtn"></button>
+      </div>
 
       <div class="divider"></div>
 
       <div>
-        <div class="section-title">Overview</div>
+        <div class="section-title" data-i18n="sectionOverview"></div>
         <div class="stat-row">
           <div class="stat-card">
             <div class="stat-value" id="val-total">—</div>
-            <div class="stat-label">Applications</div>
+            <div class="stat-label" data-i18n="statApplications"></div>
           </div>
           <div class="stat-card">
             <div class="stat-value" id="val-countries">—</div>
-            <div class="stat-label">Locations</div>
+            <div class="stat-label" data-i18n="statLocations"></div>
           </div>
         </div>
       </div>
@@ -475,12 +580,12 @@
       <div class="divider"></div>
 
       <div>
-        <div class="section-title">Work Type</div>
+        <div class="section-title" data-i18n="sectionWorkType"></div>
         <div class="chart-block"><canvas id="chartWorktype"></canvas></div>
       </div>
 
       <div>
-        <div class="section-title">Top Locations</div>
+        <div class="section-title" data-i18n="sectionTopLocations"></div>
         <div class="chart-block countries-block"><canvas id="chartCountries"></canvas></div>
       </div>
 
@@ -489,25 +594,32 @@
     <!-- Main -->
     <main class="main">
       <div style="padding:14px 24px 0;flex-shrink:0;display:flex;gap:10px;align-items:center;">
-        <button class="ask-ai-btn" onclick="openModal()">+ 新增申请记录</button>
-        <input class="search-input" id="searchInput" type="text" placeholder="搜索公司或职位..." oninput="filterApplications()">
+        <button class="ask-ai-btn" onclick="openModal()" id="addAppBtn" data-i18n="addBtn"></button>
+        <input class="search-input" id="searchInput" type="text" data-i18n-placeholder="searchPlaceholder" oninput="filterApplications()">
+        <div class="export-wrap">
+          <button class="ask-ai-btn" onclick="toggleExportMenu(event)" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;" data-i18n="downloadBtn"></button>
+          <div class="export-menu" id="exportMenu">
+            <div class="export-item" onclick="downloadCSV(); closeExportMenu()">📄 CSV</div>
+            <div class="export-item" onclick="downloadPDF(); closeExportMenu()">📑 PDF</div>
+          </div>
+        </div>
       </div>
 
       <!-- Table header -->
       <div class="list-header">
-        <span style="flex:2">公司</span>
-        <span style="flex:2">职位</span>
-        <span style="flex:1">地点</span>
-        <span style="flex:1">工作类型</span>
-        <span style="flex:1">链接</span>
-        <span style="flex:1;cursor:pointer;user-select:none;" onclick="toggleSort()" id="sortHeader">申请时间 <span id="sortIcon">↓</span></span>
-        <span style="flex:1">反馈</span>
+        <span style="flex:2" data-i18n="colCompany"></span>
+        <span style="flex:2" data-i18n="colPosition"></span>
+        <span style="flex:1" data-i18n="colLocation"></span>
+        <span style="flex:1" data-i18n="colWorkType"></span>
+        <span style="flex:1" data-i18n="colLink"></span>
+        <span style="flex:1;cursor:pointer;user-select:none;" onclick="toggleSort()" id="sortHeader"><span data-i18n="colDate"></span> <span id="sortIcon">↓</span></span>
+        <span style="flex:1" data-i18n="colFeedback"></span>
         <span style="width:26px;flex-shrink:0"></span>
       </div>
 
       <!-- Applications list -->
       <div class="list-area" id="listArea">
-        <div style="color:#9ca3af;font-size:13px;text-align:center;padding:40px 0;">加载中...</div>
+        <div style="color:#9ca3af;font-size:13px;text-align:center;padding:40px 0;" id="listLoading" data-i18n="loading"></div>
       </div>
 
       <!-- Pagination -->
@@ -516,76 +628,186 @@
       <!-- Chat overlay -->
       <aside class="chat-sidebar hidden" id="chatSidebar">
         <div class="chat-topbar">
-          <span class="chat-topbar-title">💬 Ask AI</span>
+          <span class="chat-topbar-title" data-i18n="chatTitle"></span>
           <div class="chat-topbar-actions">
-            <button onclick="clearChat()" style="padding:4px 10px;border:1px solid #e5e7eb;border-radius:5px;background:#fff;font-size:12px;color:#6b7280;cursor:pointer;transition:background 0.15s,color 0.15s;" onmouseover="this.style.background='#fee2e2';this.style.color='#dc2626'" onmouseout="this.style.background='#fff';this.style.color='#6b7280'">清空对话</button>
-            <button class="chat-icon-btn" onclick="toggleChat()" title="关闭">✕</button>
+            <button id="chatClearBtn" onclick="clearChat()" style="padding:4px 10px;border:1px solid #e5e7eb;border-radius:5px;background:#fff;font-size:12px;color:#6b7280;cursor:pointer;transition:background 0.15s,color 0.15s;" onmouseover="this.style.background='#fee2e2';this.style.color='#dc2626'" onmouseout="this.style.background='#fff';this.style.color='#6b7280'" data-i18n="chatClear"></button>
+            <button class="chat-icon-btn" onclick="toggleChat()" data-i18n-title="chatClose">✕</button>
           </div>
         </div>
         <div class="chat-messages" id="chatMessages">
           <div class="chat-empty" id="chatEmpty">
             <div class="chat-empty-icon">🔍</div>
-            <div>用自然语言查询你的求职数据</div>
-            <div class="chat-suggestions">
-              <button class="chat-suggestion" onclick="sendSuggestion(this)">我总共投了多少家公司？</button>
-              <button class="chat-suggestion" onclick="sendSuggestion(this)">哪个地点投递最多？</button>
-              <button class="chat-suggestion" onclick="sendSuggestion(this)">有多少家公司没有回复？</button>
-              <button class="chat-suggestion" onclick="sendSuggestion(this)">Remote和Onsite各投了多少？</button>
-              <button class="chat-suggestion" onclick="sendSuggestion(this)">挪威的工作许可要求是什么？</button>
-            </div>
+            <div data-i18n="chatEmptyText"></div>
+            <div class="chat-suggestions" id="chatSuggestionsContainer"></div>
           </div>
         </div>
         <div class="chat-input-area">
           <textarea class="chat-input" id="chatInput" rows="1"
-            placeholder="输入问题，例如：最近投了哪些公司？"
+            data-i18n-placeholder="chatPlaceholder"
             onkeydown="handleChatKey(event)"
             oninput="autoResize(this)"></textarea>
-          <button class="chat-send-btn" id="chatSendBtn" onclick="sendChat()">发送</button>
+          <button class="chat-send-btn" id="chatSendBtn" onclick="sendChat()" data-i18n="chatSend"></button>
         </div>
       </aside>
     </main>
 
   </div><!-- /#appWrapper -->
 
-  <!-- Admin Panel -->
-  <div id="adminPanel" class="hidden">
-    <div class="admin-box">
-      <div class="admin-header">
-        <h2>⚙️ 管理后台</h2>
-        <button class="admin-close" onclick="closeAdmin()">✕</button>
+  <!-- Admin View (full-screen, admin only) -->
+  <div id="adminView" class="hidden">
+    <div class="admin-topbar">
+      <div class="admin-topbar-left">
+        <div style="width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;">🔍</div>
+        <span class="admin-topbar-title">JobTrack AI</span>
+        <span class="admin-topbar-badge" data-i18n="adminBadge"></span>
       </div>
-      <div class="admin-tabs">
-        <div class="admin-tab active" onclick="switchAdminTab('users', this)">用户管理</div>
-        <div class="admin-tab" onclick="switchAdminTab('invites', this)">邀请码</div>
+      <div class="admin-topbar-right">
+        <button id="langToggleAdmin" onclick="toggleLang()" style="font-size:11px;font-weight:600;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;padding:2px 7px;cursor:pointer;">EN</button>
+        <span style="font-size:12px;color:#6b7280;" id="adminUserEmail">—</span>
+        <button class="logout-btn" onclick="logout()" data-i18n="logoutBtn"></button>
       </div>
-      <div class="admin-body">
+    </div>
+    <div class="admin-layout">
+
+      <!-- 左侧导航 -->
+      <nav class="admin-nav">
+        <button class="admin-nav-item active" id="nav-overview" onclick="switchAdminModule('overview')">
+          <span class="admin-nav-icon">📊</span><span data-i18n="adminTabOverview"></span>
+        </button>
+        <button class="admin-nav-item" id="nav-users" onclick="switchAdminModule('users')">
+          <span class="admin-nav-icon">👥</span><span data-i18n="adminTabUsers"></span>
+        </button>
+        <button class="admin-nav-item" id="nav-invites" onclick="switchAdminModule('invites')">
+          <span class="admin-nav-icon">🎟️</span><span data-i18n="adminTabInvites"></span>
+        </button>
+        <button class="admin-nav-item" id="nav-feedback" onclick="switchAdminModule('feedback')">
+          <span class="admin-nav-icon">💬</span><span data-i18n="adminTabFeedback"></span>
+        </button>
+      </nav>
+
+      <!-- 右侧内容 -->
+      <div class="admin-content">
+
+        <!-- 数据概览 -->
+        <div id="module-overview" class="admin-module active">
+          <div class="admin-section-title" data-i18n="adminTabOverview"></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:14px;">
+            <div class="admin-stat-card">
+              <div class="admin-stat-label" data-i18n="adminStatUsers"></div>
+              <div id="stat-total-users" class="admin-stat-value" style="color:#111827;">—</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-label" data-i18n="adminStatToday"></div>
+              <div id="stat-new-today" class="admin-stat-value" style="color:#6366f1;">—</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-label" data-i18n="adminStatFeedback"></div>
+              <div id="stat-feedback" class="admin-stat-value" style="color:#111827;">—</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-label" data-i18n="adminStatInvites"></div>
+              <div id="stat-invites" class="admin-stat-value" style="color:#10b981;">—</div>
+            </div>
+          </div>
+        </div>
+
         <!-- 用户管理 -->
-        <div id="adminTabUsers" class="admin-tab-content active">
-          <table class="admin-table">
+        <div id="module-users" class="admin-module">
+          <div class="admin-section-title" data-i18n="adminTabUsers"></div>
+          <table class="admin-table" style="margin-top:14px;">
             <thead>
               <tr>
-                <th>ID</th><th>邮箱</th><th>角色</th><th>申请数</th><th>注册时间</th><th>操作</th>
+                <th data-i18n="adminColId"></th>
+                <th data-i18n="adminColEmail"></th>
+                <th data-i18n="adminColRole"></th>
+                <th data-i18n="adminColCreated"></th>
+                <th data-i18n="adminColActions"></th>
               </tr>
             </thead>
             <tbody id="adminTableBody">
-              <tr><td colspan="6" style="color:#9ca3af;text-align:center;padding:24px">加载中...</td></tr>
+              <tr><td colspan="5" style="color:#9ca3af;text-align:center;padding:24px" data-i18n="loading"></td></tr>
             </tbody>
           </table>
         </div>
+
         <!-- 邀请码 -->
-        <div id="adminTabInvites" class="admin-tab-content">
-          <div style="padding:12px 0 16px;display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:12px;color:#6b7280">每个邀请码只能使用一次</span>
-            <button class="admin-action-btn" style="background:#6366f1;color:#fff;border-color:#6366f1" onclick="createInviteCode()">+ 生成邀请码</button>
+        <div id="module-invites" class="admin-module">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="admin-section-title" data-i18n="adminTabInvites"></div>
+            <button class="admin-action-btn" style="background:#6366f1;color:#fff;border-color:#6366f1" onclick="createInviteCode()" data-i18n="adminInviteGenerate"></button>
           </div>
+          <p style="font-size:12px;color:#9ca3af;margin:6px 0 14px;" data-i18n="adminInviteHint"></p>
           <table class="admin-table">
             <thead>
-              <tr><th>邀请码</th><th>状态</th><th>使用者</th><th>使用时间</th><th>操作</th></tr>
+              <tr>
+                <th data-i18n="adminInviteColCode"></th>
+                <th data-i18n="adminInviteColStatus"></th>
+                <th data-i18n="adminInviteColUsedBy"></th>
+                <th data-i18n="adminInviteColUsedAt"></th>
+                <th data-i18n="adminInviteColActions"></th>
+              </tr>
             </thead>
             <tbody id="inviteTableBody">
-              <tr><td colspan="5" style="color:#9ca3af;text-align:center;padding:24px">加载中...</td></tr>
+              <tr><td colspan="5" style="color:#9ca3af;text-align:center;padding:24px" data-i18n="loading"></td></tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- 用户反馈 -->
+        <div id="module-feedback" class="admin-module">
+          <div class="admin-section-title" data-i18n="adminTabFeedback"></div>
+          <table class="admin-table" style="margin-top:14px;">
+            <thead>
+              <tr>
+                <th data-i18n="adminFeedbackColUser"></th>
+                <th data-i18n="adminFeedbackColContent"></th>
+                <th data-i18n="adminFeedbackColDate"></th>
+              </tr>
+            </thead>
+            <tbody id="feedbackTableBody">
+              <tr><td colspan="3" style="color:#9ca3af;text-align:center;padding:24px" data-i18n="loading"></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Donate Modal -->
+  <div class="modal-overlay" id="donateOverlay">
+    <div class="modal" style="width:440px;text-align:center;">
+      <h2 data-i18n="donateTitle"></h2>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 20px;" data-i18n="donateSub"></p>
+      <div style="display:flex;gap:16px;justify-content:center;margin-bottom:20px;">
+        <div style="flex:1;border-radius:12px;overflow:hidden;">
+          <img id="qr-alipay" src="alipay.JPG" alt="支付宝收款码" style="width:100%;display:block;border-radius:12px;">
+        </div>
+        <div style="flex:1;border-radius:12px;overflow:hidden;">
+          <img id="qr-wechat" src="wechat.JPG" alt="微信收款码" style="width:100%;display:block;border-radius:12px;">
+        </div>
+      </div>
+      <p style="font-size:12px;color:#9ca3af;margin-bottom:16px;" data-i18n="donateThanks"></p>
+      <button class="btn-cancel" style="width:100%" onclick="document.getElementById('donateOverlay').classList.remove('open')" data-i18n="btnCancel"></button>
+    </div>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div class="modal-overlay" id="feedbackOverlay">
+    <div class="modal" style="width:420px">
+      <h2 data-i18n="feedbackTitle"></h2>
+      <div id="feedbackSuccess" style="display:none;color:#059669;font-size:13px;background:#d1fae5;padding:16px;border-radius:8px;text-align:center;margin-bottom:16px;" data-i18n="feedbackSuccess"></div>
+      <div id="feedbackForm">
+        <div class="form-row">
+          <label data-i18n="feedbackLabelContent"></label>
+          <textarea id="f-feedback-content" rows="5"
+            style="padding:9px 12px;border:1px solid #e5e7eb;border-radius:7px;font-size:13px;color:#111827;outline:none;resize:vertical;font-family:inherit;line-height:1.5;transition:border-color 0.15s;"
+            onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e5e7eb'"
+            data-i18n-placeholder="feedbackPlaceholder"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel" onclick="closeFeedback()" data-i18n="btnCancel"></button>
+          <button class="btn-save" id="btnFeedbackSubmit" onclick="submitFeedback()" data-i18n="feedbackSubmit"></button>
         </div>
       </div>
     </div>
@@ -594,25 +816,34 @@
   <!-- Application Modal -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
-      <h2 id="modalTitle">新增申请记录</h2>
+      <h2 id="modalTitle" data-i18n="modalTitleAdd"></h2>
+      <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="parseImageForForm(this)">
+      <div id="imgParseArea" class="img-parse-area" onclick="document.getElementById('imgFileInput').click()">
+        <span class="img-parse-icon">🖼️</span>
+        <div class="img-parse-text">
+          <div class="img-parse-title" data-i18n="imgParseTitle"></div>
+          <div class="img-parse-sub" data-i18n="imgParseSub"></div>
+        </div>
+      </div>
+      <div id="imgParseStatus" class="img-parse-status" style="display:none"></div>
       <div class="form-row">
-        <label>公司名称 *</label>
+        <label data-i18n="labelCompany"></label>
         <input id="f-company" type="text" placeholder="e.g. Spotify">
       </div>
       <div class="form-row">
-        <label>职位 *</label>
+        <label data-i18n="labelPosition"></label>
         <input id="f-position" type="text" placeholder="e.g. Product Manager">
       </div>
       <div class="form-row">
-        <label>投递日期</label>
+        <label data-i18n="labelDate"></label>
         <input id="f-date" type="date">
       </div>
       <div class="form-row">
-        <label>国家 / 地区</label>
+        <label data-i18n="labelLocation"></label>
         <input id="f-location" type="text" placeholder="e.g. Netherlands">
       </div>
       <div class="form-row">
-        <label>工作类型</label>
+        <label data-i18n="labelWorkType"></label>
         <input id="f-worktype" type="text" list="worktype-options" placeholder="Remote / Onsite / Hybrid...">
         <datalist id="worktype-options">
           <option value="Remote">
@@ -621,11 +852,11 @@
         </datalist>
       </div>
       <div class="form-row">
-        <label>职位链接</label>
+        <label data-i18n="labelLink"></label>
         <input id="f-link" type="url" placeholder="https://...">
       </div>
       <div class="form-row">
-        <label>反馈</label>
+        <label data-i18n="labelFeedback"></label>
         <input id="f-feedback" type="text" list="feedback-options" placeholder="No Response / Fail / Offer...">
         <datalist id="feedback-options">
           <option value="">
@@ -636,8 +867,8 @@
         </datalist>
       </div>
       <div class="form-actions">
-        <button class="btn-cancel" onclick="closeModal()">取消</button>
-        <button class="btn-save" id="btnSave" onclick="saveApplication()">保存</button>
+        <button class="btn-cancel" onclick="closeModal()" data-i18n="btnCancel"></button>
+        <button class="btn-save" id="btnSave" onclick="saveApplication()" data-i18n="btnSave"></button>
       </div>
     </div>
   </div>
@@ -646,6 +877,346 @@
 const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:8000'
   : `${window.location.protocol}//${window.location.hostname}:8000`;
+
+// ── i18n ──
+
+const LANGS = {
+  zh: {
+    authTitleLogin:        '登录账号',
+    authTitleRegister:     '创建账号',
+    authSubLogin:          '继续追踪你的求职进度',
+    authSubRegister:       '开始追踪你的求职进度',
+    authLabelEmail:        '邮箱',
+    authLabelPassword:     '密码',
+    authLabelInvite:       '邀请码',
+    authInvitePlaceholder: '请输入邀请码',
+    authBtnLogin:          '登录',
+    authBtnRegister:       '注册',
+    authBtnLoading:        '请稍候...',
+    authToggleToRegister:  '还没有账号？',
+    authToggleLinkRegister:'立即注册',
+    authToggleToLogin:     '已有账号？',
+    authToggleLinkLogin:   '立即登录',
+    authErrorFill:         '请填写邮箱和密码',
+    authErrorNetwork:      '网络错误，请检查 API 服务是否运行',
+    authErrorDefault:      '操作失败，请重试',
+
+    logoutBtn:             '退出',
+    adminBtnLabel:         '⚙️ 用户管理',
+    sectionOverview:       '概览',
+    statApplications:      '投递总数',
+    statLocations:         '地点',
+    sectionWorkType:       '工作类型',
+    sectionTopLocations:   '热门地点',
+
+    addBtn:                '+ 新增申请记录',
+    downloadBtn:           '↓ 导出记录',
+    searchPlaceholder:     '搜索公司或职位...',
+    colCompany:            '公司',
+    colPosition:           '职位',
+    colLocation:           '地点',
+    colWorkType:           '工作类型',
+    colLink:               '链接',
+    colDate:               '申请时间',
+    colFeedback:           '进度',
+    loading:               '加载中...',
+    noRecords:             '暂无申请记录',
+    noMatch:               '没有匹配的记录',
+    linkText:              '↗ 链接',
+    paginationInfo:        (s, e, tot) => `第 ${s}–${e} 条，共 ${tot} 条`,
+
+    chatTitle:             '💬 Ask AI',
+    chatClear:             '清空对话',
+    chatClose:             '关闭',
+    chatEmptyText:         '用自然语言查询你的求职数据',
+    chatSuggestions:       ['我总共投了多少家公司？','哪个地点投递最多？','有多少家公司没有回复？','Remote和Onsite各投了多少？','挪威的工作许可要求是什么？'],
+    chatPlaceholder:       '输入问题，例如：最近投了哪些公司？',
+    chatSend:              '发送',
+    chatThinking:          '思考中...',
+    chatError:             '网络错误，请重试',
+    chatFailed:            '请求失败，请重试',
+
+    modalTitleAdd:         '新增申请记录',
+    modalTitleEdit:        '编辑申请记录',
+    imgParseTitle:         '上传图片自动识别',
+    imgParseSub:           '支持截图、招聘页截屏，AI 自动提取字段',
+    imgParsing:            '正在识别图片...',
+    imgParseOk:            '识别完成，请检查并补充以下字段',
+    imgParseErr:           '识别失败，请手动填写',
+    labelCompany:          '公司名称 *',
+    labelPosition:         '职位 *',
+    labelDate:             '投递日期',
+    labelLocation:         '国家 / 地区',
+    labelWorkType:         '工作类型',
+    labelLink:             '职位链接',
+    labelFeedback:         '进度',
+    btnCancel:             '取消',
+    btnSave:               '保存',
+    btnUpdate:             '更新',
+    btnSaving:             '保存中...',
+    btnUpdating:           '更新中...',
+    saveRequired:          '公司名称和职位为必填项',
+    saveFailed:            '保存失败，请重试',
+    deleteConfirm:         '确认删除这条申请记录？此操作不可撤销。',
+
+    adminTitle:            '⚙️ 管理后台',
+    adminTabUsers:         '用户管理',
+    adminTabInvites:       '邀请码',
+    adminColId:            'ID',
+    adminColEmail:         '邮箱',
+    adminColRole:          '角色',
+    adminColAppCount:      '申请数',
+    adminColCreated:       '注册时间',
+    adminColActions:       '操作',
+    adminNoUsers:          '暂无用户',
+    adminSelf:             '(我)',
+    adminSetAdmin:         '设为管理员',
+    adminUnsetAdmin:       '取消管理员',
+    adminDeleteUser:       '删除',
+    adminResetPw:          '重置密码',
+    adminResetPwConfirm:   '确认',
+    adminResetPwCancel:    '取消',
+    adminPwPlaceholder:    '新密码',
+    adminDeleteConfirm:    (email) => `确认删除用户 ${email}？\n该用户的所有申请记录也会一并删除。`,
+    adminPwMinLength:      '密码至少 6 位',
+    adminPwReset:          '密码已重置',
+    adminInviteHint:       '每个邀请码只能使用一次',
+    adminInviteGenerate:   '+ 生成邀请码',
+    adminInviteColCode:    '邀请码',
+    adminInviteColStatus:  '状态',
+    adminInviteColUsedBy:  '使用者',
+    adminInviteColUsedAt:  '使用时间',
+    adminInviteColActions: '操作',
+    adminNoInvites:        '暂无邀请码',
+    adminRevoke:           '撤销',
+    adminCopy:             '复制',
+    adminRevokeConfirm:    '确认撤销此邀请码？',
+    inviteStatusRevoked:   '已撤销',
+    inviteStatusUsed:      '已使用',
+    inviteStatusAvailable: '可用',
+
+    feedbackBtn:           '💡 反馈建议',
+    donateBtn:             '☕ 打赏支持',
+    donateTitle:           '打赏支持',
+    donateSub:             '如果这个工具对你有帮助，欢迎请我喝杯咖啡 ☕',
+    donateThanks:          '感谢你的支持，这是我持续更新的动力 🙏',
+    feedbackTitle:         '提交反馈',
+    feedbackLabelCat:      '类型',
+    feedbackLabelContent:  '反馈内容',
+    feedbackPlaceholder:   '请详细描述你的建议或遇到的问题...',
+    feedbackSubmit:        '提交',
+    feedbackSubmitting:    '提交中...',
+    feedbackSuccess:       '感谢你的反馈！我们会认真参考。',
+    feedbackRequired:      '请填写反馈内容',
+    feedbackFailed:        '提交失败，请重试',
+    catBug:                '问题反馈',
+    catFeature:            '功能建议',
+    catUI:                 '界面改进',
+    catOther:              '其他',
+
+    adminBadge:            '管理后台',
+    adminTabOverview:      '数据概览',
+    adminStatUsers:        '总用户数',
+    adminStatToday:        '今日新增',
+    adminStatFeedback:     '反馈总数',
+    adminStatInvites:      '可用邀请码',
+
+    adminTabFeedback:      '用户反馈',
+    adminFeedbackColUser:  '用户',
+    adminFeedbackColContent:'反馈内容',
+    adminFeedbackColDate:  '提交时间',
+    adminNoFeedback:       '暂无反馈',
+  },
+  en: {
+    authTitleLogin:        'Sign In',
+    authTitleRegister:     'Create Account',
+    authSubLogin:          'Continue tracking your job applications',
+    authSubRegister:       'Start tracking your job applications',
+    authLabelEmail:        'Email',
+    authLabelPassword:     'Password',
+    authLabelInvite:       'Invite Code',
+    authInvitePlaceholder: 'Enter invite code',
+    authBtnLogin:          'Sign In',
+    authBtnRegister:       'Register',
+    authBtnLoading:        'Please wait...',
+    authToggleToRegister:  "Don't have an account?",
+    authToggleLinkRegister:'Sign Up',
+    authToggleToLogin:     'Already have an account?',
+    authToggleLinkLogin:   'Sign In',
+    authErrorFill:         'Please enter email and password',
+    authErrorNetwork:      'Network error. Please check if the API server is running',
+    authErrorDefault:      'Operation failed. Please try again',
+
+    logoutBtn:             'Sign Out',
+    adminBtnLabel:         '⚙️ User Management',
+    sectionOverview:       'Overview',
+    statApplications:      'Applications',
+    statLocations:         'Locations',
+    sectionWorkType:       'Work Type',
+    sectionTopLocations:   'Top Locations',
+
+    addBtn:                '+ Add Application',
+    downloadBtn:           '↓ Export',
+    searchPlaceholder:     'Search company or position...',
+    colCompany:            'Company',
+    colPosition:           'Position',
+    colLocation:           'Location',
+    colWorkType:           'Work Type',
+    colLink:               'Link',
+    colDate:               'Applied Date',
+    colFeedback:           'Progress',
+    loading:               'Loading...',
+    noRecords:             'No applications yet',
+    noMatch:               'No matching records',
+    linkText:              '↗ Link',
+    paginationInfo:        (s, e, tot) => `${s}–${e} of ${tot}`,
+
+    chatTitle:             '💬 Ask AI',
+    chatClear:             'Clear Chat',
+    chatClose:             'Close',
+    chatEmptyText:         'Query your job data in natural language',
+    chatSuggestions:       ['How many companies have I applied to?','Which location has the most applications?','How many companies have not responded?','How many Remote vs Onsite?','Work permit requirements in Norway?'],
+    chatPlaceholder:       'Ask a question, e.g.: Which companies did I apply to recently?',
+    chatSend:              'Send',
+    chatThinking:          'Thinking...',
+    chatError:             'Network error. Please try again',
+    chatFailed:            'Request failed. Please try again',
+
+    modalTitleAdd:         'Add Application',
+    modalTitleEdit:        'Edit Application',
+    imgParseTitle:         'Upload image to auto-fill',
+    imgParseSub:           'Screenshot or job page image — AI extracts fields automatically',
+    imgParsing:            'Recognizing image...',
+    imgParseOk:            'Done — please review and fill any missing fields',
+    imgParseErr:           'Recognition failed, please fill in manually',
+    labelCompany:          'Company *',
+    labelPosition:         'Position *',
+    labelDate:             'Applied Date',
+    labelLocation:         'Country / Region',
+    labelWorkType:         'Work Type',
+    labelLink:             'Job Link',
+    labelFeedback:         'Progress',
+    btnCancel:             'Cancel',
+    btnSave:               'Save',
+    btnUpdate:             'Update',
+    btnSaving:             'Saving...',
+    btnUpdating:           'Updating...',
+    saveRequired:          'Company name and position are required',
+    saveFailed:            'Save failed. Please try again',
+    deleteConfirm:         'Delete this application? This cannot be undone.',
+
+    adminTitle:            '⚙️ Admin Panel',
+    adminTabUsers:         'Users',
+    adminTabInvites:       'Invite Codes',
+    adminColId:            'ID',
+    adminColEmail:         'Email',
+    adminColRole:          'Role',
+    adminColAppCount:      'Apps',
+    adminColCreated:       'Registered',
+    adminColActions:       'Actions',
+    adminNoUsers:          'No users found',
+    adminSelf:             '(me)',
+    adminSetAdmin:         'Set Admin',
+    adminUnsetAdmin:       'Remove Admin',
+    adminDeleteUser:       'Delete',
+    adminResetPw:          'Reset Password',
+    adminResetPwConfirm:   'Confirm',
+    adminResetPwCancel:    'Cancel',
+    adminPwPlaceholder:    'New password',
+    adminDeleteConfirm:    (email) => `Delete user ${email}?\nAll their applications will also be deleted.`,
+    adminPwMinLength:      'Password must be at least 6 characters',
+    adminPwReset:          'Password has been reset',
+    adminInviteHint:       'Each invite code can only be used once',
+    adminInviteGenerate:   '+ Generate Invite Code',
+    adminInviteColCode:    'Code',
+    adminInviteColStatus:  'Status',
+    adminInviteColUsedBy:  'Used By',
+    adminInviteColUsedAt:  'Used At',
+    adminInviteColActions: 'Actions',
+    adminNoInvites:        'No invite codes found',
+    adminRevoke:           'Revoke',
+    adminCopy:             'Copy',
+    adminRevokeConfirm:    'Revoke this invite code?',
+    inviteStatusRevoked:   'Revoked',
+    inviteStatusUsed:      'Used',
+    inviteStatusAvailable: 'Available',
+
+    feedbackBtn:           '💡 Feedback',
+    donateBtn:             '☕ Support',
+    donateTitle:           'Support Us',
+    donateSub:             'If this tool has been helpful, feel free to buy me a coffee ☕',
+    donateThanks:          'Thank you for your support — it keeps me going 🙏',
+    feedbackTitle:         'Submit Feedback',
+    feedbackLabelCat:      'Category',
+    feedbackLabelContent:  'Content',
+    feedbackPlaceholder:   'Describe your suggestion or issue in detail...',
+    feedbackSubmit:        'Submit',
+    feedbackSubmitting:    'Submitting...',
+    feedbackSuccess:       'Thank you for your feedback!',
+    feedbackRequired:      'Please enter your feedback',
+    feedbackFailed:        'Submission failed. Please try again',
+    catBug:                'Bug Report',
+    catFeature:            'Feature Request',
+    catUI:                 'UI Improvement',
+    catOther:              'Other',
+
+    adminBadge:            'Admin Panel',
+    adminTabOverview:      'Overview',
+    adminStatUsers:        'Total Users',
+    adminStatToday:        'New Today',
+    adminStatFeedback:     'Total Feedback',
+    adminStatInvites:      'Available Invites',
+
+    adminTabFeedback:      'Feedback',
+    adminFeedbackColUser:  'User',
+    adminFeedbackColContent:'Content',
+    adminFeedbackColDate:  'Submitted',
+    adminNoFeedback:       'No feedback yet',
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'zh';
+
+function t(key, ...args) {
+  const val = LANGS[currentLang][key];
+  if (val === undefined) return key;
+  return typeof val === 'function' ? val(...args) : val;
+}
+
+function applyLang() {
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-opt]').forEach(el => {
+    el.textContent = t(el.dataset.i18nOpt);
+  });
+  const label = currentLang === 'zh' ? 'EN' : '中';
+  ['langToggle','langToggleAdmin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = label;
+  });
+  renderChatSuggestions();
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('lang', currentLang);
+  applyLang();
+  // re-render dynamic content that depends on language
+  if (allApps.length) renderPage();
+}
+
+function renderChatSuggestions() {
+  const container = document.getElementById('chatSuggestionsContainer');
+  if (!container) return;
+  container.innerHTML = t('chatSuggestions').map(s =>
+    `<button class="chat-suggestion" onclick="sendSuggestion(this)">${esc(s)}</button>`
+  ).join('');
+}
 
 // ── Auth helpers ──
 
@@ -677,14 +1248,25 @@ function clearSession() {
 
 function showApp() {
   document.getElementById('authScreen').classList.add('hidden');
-  document.getElementById('appWrapper').classList.remove('hidden');
-  document.getElementById('userEmail').textContent = getEmail() || '—';
-  document.getElementById('adminEntrance').style.display = isAdmin() ? 'block' : 'none';
-  loadAll();
+  if (isAdmin()) {
+    document.getElementById('appWrapper').classList.add('hidden');
+    document.getElementById('adminView').classList.remove('hidden');
+    document.getElementById('adminUserEmail').textContent = getEmail() || '—';
+    loadAdminStats();
+    refreshAdminTable();
+    refreshInviteTable();
+    refreshFeedbackTable();
+  } else {
+    document.getElementById('adminView').classList.add('hidden');
+    document.getElementById('appWrapper').classList.remove('hidden');
+    document.getElementById('userEmail').textContent = getEmail() || '—';
+    loadAll();
+  }
 }
 
 function showAuth() {
   document.getElementById('appWrapper').classList.add('hidden');
+  document.getElementById('adminView').classList.add('hidden');
   document.getElementById('authScreen').classList.remove('hidden');
 }
 
@@ -695,17 +1277,17 @@ function logout() {
 
 // ── Auth form ──
 
-let authMode = 'login'; // 'login' | 'register'
+let authMode = 'login';
 
 function toggleAuthMode() {
   authMode = authMode === 'login' ? 'register' : 'login';
   const isRegister = authMode === 'register';
-  document.getElementById('authTitle').textContent   = isRegister ? '创建账号' : '登录账号';
-  document.getElementById('authSub').textContent     = isRegister ? '开始追踪你的求职进度' : '继续追踪你的求职进度';
-  document.getElementById('authBtn').textContent     = isRegister ? '注册' : '登录';
-  document.getElementById('authToggleText').textContent = isRegister ? '已有账号？' : '还没有账号？';
-  document.getElementById('authToggleLink').textContent = isRegister ? '立即登录' : '立即注册';
-  document.getElementById('inviteRow').style.display = isRegister ? 'flex' : 'none';
+  document.getElementById('authTitle').textContent      = t(isRegister ? 'authTitleRegister'     : 'authTitleLogin');
+  document.getElementById('authSub').textContent        = t(isRegister ? 'authSubRegister'        : 'authSubLogin');
+  document.getElementById('authBtn').textContent        = t(isRegister ? 'authBtnRegister'        : 'authBtnLogin');
+  document.getElementById('authToggleText').textContent = t(isRegister ? 'authToggleToLogin'      : 'authToggleToRegister');
+  document.getElementById('authToggleLink').textContent = t(isRegister ? 'authToggleLinkLogin'    : 'authToggleLinkRegister');
+  document.getElementById('inviteRow').style.display    = isRegister ? 'flex' : 'none';
   document.getElementById('authInviteCode').value = '';
   setAuthError('');
 }
@@ -719,11 +1301,11 @@ function setAuthError(msg) {
 async function submitAuth() {
   const email    = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
-  if (!email || !password) { setAuthError('请填写邮箱和密码'); return; }
+  if (!email || !password) { setAuthError(t('authErrorFill')); return; }
 
   const btn = document.getElementById('authBtn');
   btn.disabled = true;
-  btn.textContent = '请稍候...';
+  btn.textContent = t('authBtnLoading');
   setAuthError('');
 
   const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
@@ -740,20 +1322,19 @@ async function submitAuth() {
     });
     const data = await res.json();
     if (!res.ok) {
-      setAuthError(data.detail || '操作失败，请重试');
+      setAuthError(data.detail || t('authErrorDefault'));
     } else {
       setSession(data.token, data.email);
       showApp();
     }
-  } catch (e) {
-    setAuthError('网络错误，请检查 API 服务是否运行');
+  } catch {
+    setAuthError(t('authErrorNetwork'));
   }
 
   btn.disabled = false;
-  btn.textContent = authMode === 'register' ? '注册' : '登录';
+  btn.textContent = t(authMode === 'register' ? 'authBtnRegister' : 'authBtnLogin');
 }
 
-// Allow Enter key to submit
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !document.getElementById('authScreen').classList.contains('hidden')) {
     submitAuth();
@@ -779,7 +1360,7 @@ function cardHtml(app, isNew = false) {
   const date = app.applied_date ? app.applied_date.slice(0,10) : '—';
   const safeLink = app.link && /^https?:\/\//i.test(app.link);
   const linkHtml = safeLink
-    ? `<a href="${esc(app.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ 链接</a>`
+    ? `<a href="${esc(app.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${t('linkText')}</a>`
     : '<span style="font-size:12px;color:#d1d5db;">—</span>';
   return `
     <div class="app-card ${isNew ? 'new-card' : ''}" onclick="openEdit(${app.id})" style="cursor:pointer;">
@@ -790,7 +1371,7 @@ function cardHtml(app, isNew = false) {
       <span class="col-link">${linkHtml}</span>
       <span class="col-date">${date}</span>
       <span class="col-feedback">${badgeHtml(app.feedback)}</span>
-      <button class="del-btn" onclick="event.stopPropagation(); deleteApplication(${app.id})" title="删除">✕</button>
+      <button class="del-btn" onclick="event.stopPropagation(); deleteApplication(${app.id})" title="✕">✕</button>
     </div>`;
 }
 
@@ -807,13 +1388,86 @@ let allApps = [];
 let filteredApps = [];
 let sortOrder = 'desc';
 let currentPage = 1;
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 30;
 
 async function loadApplications() {
   const res = await apiFetch('/applications');
   if (!res) return;
   allApps = await res.json();
   filterApplications();
+}
+
+function toggleExportMenu(e) {
+  e.stopPropagation();
+  document.getElementById('exportMenu').classList.toggle('open');
+}
+function closeExportMenu() {
+  document.getElementById('exportMenu').classList.remove('open');
+}
+document.addEventListener('click', closeExportMenu);
+
+function downloadCSV() {
+  if (!allApps.length) return;
+  const headers = [
+    t('colCompany'), t('colPosition'), t('colDate'),
+    t('colLocation'), t('colWorkType'), t('colLink'), t('colFeedback')
+  ];
+  const rows = allApps.map(a => [
+    a.company    || '',
+    a.position   || '',
+    a.applied_date ? a.applied_date.slice(0, 10) : '',
+    a.location   || '',
+    a.work_type  || '',
+    a.link       || '',
+    a.feedback   || ''
+  ]);
+  const csvContent = [headers, ...rows]
+    .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+    .join('\r\n');
+  const blob = new Blob(['﻿' + csvContent, ''], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `jobtrack_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadPDF() {
+  if (!allApps.length) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  const headers = [
+    LANGS.en.colCompany, LANGS.en.colPosition, LANGS.en.colDate,
+    LANGS.en.colLocation, LANGS.en.colWorkType, LANGS.en.colFeedback
+  ];
+  const rows = allApps.map(a => [
+    a.company    || '—',
+    a.position   || '—',
+    a.applied_date ? a.applied_date.slice(0, 10) : '—',
+    a.location   || '—',
+    a.work_type  || '—',
+    a.feedback   || 'No Response'
+  ]);
+
+  const date = new Date().toISOString().slice(0, 10);
+  doc.setFontSize(13);
+  doc.setTextColor(40);
+  doc.text('JobTrack — Applications  (' + date + ')', 14, 14);
+
+  doc.autoTable({
+    head: [headers],
+    body: rows,
+    startY: 20,
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [249, 250, 251] },
+    columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 50 }, 5: { cellWidth: 30 } },
+    margin: { left: 14, right: 14 }
+  });
+
+  doc.save(`jobtrack_${date}.pdf`);
 }
 
 function toggleSort() {
@@ -845,7 +1499,7 @@ function renderPage() {
   const area = document.getElementById('listArea');
   if (filteredApps.length === 0) {
     const q = (document.getElementById('searchInput')?.value || '').trim();
-    area.innerHTML = `<div style="color:#9ca3af;font-size:13px;text-align:center;padding:40px 0;">${q ? '没有匹配的记录' : '暂无申请记录'}</div>`;
+    area.innerHTML = `<div style="color:#9ca3af;font-size:13px;text-align:center;padding:40px 0;">${q ? t('noMatch') : t('noRecords')}</div>`;
     document.getElementById('pagination').innerHTML = '';
     return;
   }
@@ -879,7 +1533,7 @@ function renderPagination() {
   ).join('');
 
   el.innerHTML = `
-    <span style="font-size:12px;color:#9ca3af">第 ${start}–${end} 条，共 ${total} 条</span>
+    <span style="font-size:12px;color:#9ca3af">${t('paginationInfo', start, end, total)}</span>
     <div style="display:flex;align-items:center;gap:4px">
       <button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>
       ${pageButtons}
@@ -1010,7 +1664,7 @@ async function sendChat() {
   input.style.height = 'auto';
 
   appendBubble('user', message);
-  const thinkingBubble = appendBubble('ai', '思考中...');
+  const thinkingBubble = appendBubble('ai', t('chatThinking'));
   thinkingBubble.classList.add('thinking');
 
   try {
@@ -1019,7 +1673,7 @@ async function sendChat() {
       body: JSON.stringify({ message, history: chatHistory })
     });
     const data = res ? await res.json() : null;
-    const answer = data?.answer || '请求失败，请重试';
+    const answer = data?.answer || t('chatFailed');
 
     thinkingBubble.classList.remove('thinking');
     thinkingBubble.textContent = answer;
@@ -1029,7 +1683,7 @@ async function sendChat() {
     if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
   } catch {
     thinkingBubble.classList.remove('thinking');
-    thinkingBubble.textContent = '网络错误，请重试';
+    thinkingBubble.textContent = t('chatError');
   }
 
   btn.disabled = false;
@@ -1040,11 +1694,14 @@ let editingId = null;
 
 function openModal() {
   editingId = null;
-  document.getElementById('modalTitle').textContent = '新增申请记录';
-  document.getElementById('btnSave').textContent = '保存';
+  document.getElementById('modalTitle').textContent = t('modalTitleAdd');
+  document.getElementById('btnSave').textContent = t('btnSave');
   ['f-company','f-position','f-location','f-link','f-feedback','f-worktype']
     .forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('f-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('imgParseArea').style.display = '';
+  document.getElementById('imgParseStatus').style.display = 'none';
+  document.getElementById('imgFileInput').value = '';
   document.getElementById('modalOverlay').classList.add('open');
 }
 
@@ -1052,8 +1709,8 @@ function openEdit(id) {
   const app = appCache.get(id);
   if (!app) return;
   editingId = app.id;
-  document.getElementById('modalTitle').textContent = '编辑申请记录';
-  document.getElementById('btnSave').textContent = '更新';
+  document.getElementById('modalTitle').textContent = t('modalTitleEdit');
+  document.getElementById('btnSave').textContent = t('btnUpdate');
   document.getElementById('f-company').value   = app.company || '';
   document.getElementById('f-position').value  = app.position || '';
   document.getElementById('f-date').value       = app.applied_date || '';
@@ -1061,7 +1718,42 @@ function openEdit(id) {
   document.getElementById('f-link').value       = app.link || '';
   document.getElementById('f-feedback').value  = app.feedback || '';
   document.getElementById('f-worktype').value  = app.work_type || '';
+  document.getElementById('imgParseArea').style.display = 'none';
+  document.getElementById('imgParseStatus').style.display = 'none';
   document.getElementById('modalOverlay').classList.add('open');
+}
+
+async function parseImageForForm(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const status = document.getElementById('imgParseStatus');
+  status.className = 'img-parse-status';
+  status.textContent = t('imgParsing');
+  status.style.display = 'flex';
+  document.getElementById('imgParseArea').style.display = 'none';
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    const res = await fetch(`${API}/applications/parse-image`, {
+      method: 'POST', body: form,
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
+    if (!res || !res.ok) throw new Error('request failed');
+    const d = await res.json();
+    if (d.company)       document.getElementById('f-company').value   = d.company;
+    if (d.position)      document.getElementById('f-position').value  = d.position;
+    if (d.applied_date)  document.getElementById('f-date').value      = d.applied_date;
+    if (d.location)      document.getElementById('f-location').value  = d.location;
+    if (d.link)          document.getElementById('f-link').value      = d.link;
+    if (d.work_type)     document.getElementById('f-worktype').value  = d.work_type;
+    if (d.feedback)      document.getElementById('f-feedback').value  = d.feedback;
+    status.className = 'img-parse-status success';
+    status.textContent = '✓ ' + t('imgParseOk');
+  } catch {
+    status.className = 'img-parse-status error';
+    status.textContent = '✕ ' + t('imgParseErr');
+    document.getElementById('imgParseArea').style.display = '';
+  }
 }
 
 function closeModal() {
@@ -1072,10 +1764,11 @@ function closeModal() {
 async function saveApplication() {
   const company  = document.getElementById('f-company').value.trim();
   const position = document.getElementById('f-position').value.trim();
-  if (!company || !position) { alert('公司名称和职位为必填项'); return; }
+  if (!company || !position) { alert(t('saveRequired')); return; }
 
   const btn = document.getElementById('btnSave');
-  btn.disabled = true; btn.textContent = editingId ? '更新中...' : '保存中...';
+  btn.disabled = true;
+  btn.textContent = editingId ? t('btnUpdating') : t('btnSaving');
 
   const body = {
     company, position,
@@ -1091,7 +1784,8 @@ async function saveApplication() {
 
   const res = await apiFetch(url, { method, body: JSON.stringify(body) });
 
-  btn.disabled = false; btn.textContent = editingId ? '更新' : '保存';
+  btn.disabled = false;
+  btn.textContent = editingId ? t('btnUpdate') : t('btnSave');
 
   if (res && res.ok) {
     closeModal();
@@ -1100,12 +1794,12 @@ async function saveApplication() {
     loadWorktypeChart();
     loadCountriesChart();
   } else {
-    alert('保存失败，请重试');
+    alert(t('saveFailed'));
   }
 }
 
 async function deleteApplication(id) {
-  if (!confirm('确认删除这条申请记录？此操作不可撤销。')) return;
+  if (!confirm(t('deleteConfirm'))) return;
   const res = await apiFetch(`/applications/${id}`, { method: 'DELETE' });
   if (res && res.ok) {
     appCache.delete(id);
@@ -1118,22 +1812,27 @@ async function deleteApplication(id) {
 
 // ── Admin ──
 
-function switchAdminTab(tab, el) {
-  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.admin-tab-content').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById(`adminTab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.add('active');
-  if (tab === 'invites') refreshInviteTable();
+function switchAdminModule(name) {
+  document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.admin-module').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-' + name).classList.add('active');
+  document.getElementById('module-' + name).classList.add('active');
+  if (name === 'overview') loadAdminStats();
+  if (name === 'users')    refreshAdminTable();
+  if (name === 'invites')  refreshInviteTable();
+  if (name === 'feedback') refreshFeedbackTable();
 }
 
-async function openAdmin() {
-  document.getElementById('adminPanel').classList.remove('hidden');
-  await refreshAdminTable();
+async function loadAdminStats() {
+  const res = await apiFetch('/admin/stats');
+  if (!res) return;
+  const s = await res.json();
+  document.getElementById('stat-total-users').textContent = s.total_users;
+  document.getElementById('stat-new-today').textContent   = s.new_today;
+  document.getElementById('stat-feedback').textContent    = s.total_feedback;
+  document.getElementById('stat-invites').textContent     = s.available_invites;
 }
 
-function closeAdmin() {
-  document.getElementById('adminPanel').classList.add('hidden');
-}
 
 async function refreshAdminTable() {
   const res = await apiFetch('/admin/users');
@@ -1141,7 +1840,7 @@ async function refreshAdminTable() {
   const users = await res.json();
   const tbody = document.getElementById('adminTableBody');
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="color:#9ca3af;text-align:center;padding:24px">暂无用户</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5" style="color:#9ca3af;text-align:center;padding:24px">${t('adminNoUsers')}</td></tr>`;
     return;
   }
   const myEmail = getEmail();
@@ -1152,26 +1851,25 @@ async function refreshAdminTable() {
       ? '<span class="admin-badge-admin">Admin</span>'
       : '<span class="admin-badge-user">User</span>';
     const toggleBtn = isSelf ? '' :
-      `<button class="admin-action-btn" onclick="toggleAdmin(${u.id})">${u.is_admin ? '取消管理员' : '设为管理员'}</button>`;
+      `<button class="admin-action-btn" onclick="toggleAdmin(${u.id})">${u.is_admin ? t('adminUnsetAdmin') : t('adminSetAdmin')}</button>`;
     const deleteBtn = isSelf ? '' :
-      `<button class="admin-action-btn danger" onclick="deleteUser(${u.id}, '${u.email}')">删除</button>`;
+      `<button class="admin-action-btn danger" onclick="deleteUser(${u.id}, '${esc(u.email)}')">${t('adminDeleteUser')}</button>`;
     return `
       <tr id="user-row-${u.id}">
         <td style="color:#9ca3af">${u.id}</td>
-        <td style="font-weight:500">${u.email}${isSelf ? ' <span style="font-size:10px;color:#9ca3af">(我)</span>' : ''}</td>
+        <td style="font-weight:500">${esc(u.email)}${isSelf ? ` <span style="font-size:10px;color:#9ca3af">${t('adminSelf')}</span>` : ''}</td>
         <td>${roleBadge}</td>
-        <td>${u.app_count}</td>
         <td style="color:#9ca3af">${date}</td>
         <td>
           ${toggleBtn}
           ${deleteBtn}
           ${isSelf ? '<span style="font-size:11px;color:#d1d5db">—</span>' : ''}
           <div class="reset-pw-row" id="pw-row-${u.id}" style="display:none">
-            <input class="reset-pw-input" id="pw-input-${u.id}" type="password" placeholder="新密码">
-            <button class="admin-action-btn" onclick="confirmResetPw(${u.id})">确认</button>
-            <button class="admin-action-btn" onclick="cancelResetPw(${u.id})">取消</button>
+            <input class="reset-pw-input" id="pw-input-${u.id}" type="password" placeholder="${t('adminPwPlaceholder')}">
+            <button class="admin-action-btn" onclick="confirmResetPw(${u.id})">${t('adminResetPwConfirm')}</button>
+            <button class="admin-action-btn" onclick="cancelResetPw(${u.id})">${t('adminResetPwCancel')}</button>
           </div>
-          ${isSelf ? '' : `<button class="admin-action-btn" style="margin-top:4px" onclick="showResetPw(${u.id})">重置密码</button>`}
+          ${isSelf ? '' : `<button class="admin-action-btn" style="margin-top:4px" onclick="showResetPw(${u.id})">${t('adminResetPw')}</button>`}
         </td>
       </tr>`;
   }).join('');
@@ -1183,7 +1881,7 @@ async function toggleAdmin(uid) {
 }
 
 async function deleteUser(uid, email) {
-  if (!confirm(`确认删除用户 ${email}？\n该用户的所有申请记录也会一并删除。`)) return;
+  if (!confirm(t('adminDeleteConfirm', email))) return;
   const res = await apiFetch(`/admin/users/${uid}`, { method: 'DELETE' });
   if (res && res.ok) await refreshAdminTable();
 }
@@ -1197,14 +1895,14 @@ function cancelResetPw(uid) {
 }
 async function confirmResetPw(uid) {
   const pw = document.getElementById(`pw-input-${uid}`).value.trim();
-  if (!pw || pw.length < 6) { alert('密码至少 6 位'); return; }
+  if (!pw || pw.length < 6) { alert(t('adminPwMinLength')); return; }
   const res = await apiFetch(`/admin/users/${uid}/reset-password`, {
     method: 'PATCH',
     body: JSON.stringify({ new_password: pw })
   });
   if (res && res.ok) {
     cancelResetPw(uid);
-    alert('密码已重置');
+    alert(t('adminPwReset'));
   }
 }
 
@@ -1216,25 +1914,25 @@ async function refreshInviteTable() {
   const codes = await res.json();
   const tbody = document.getElementById('inviteTableBody');
   if (codes.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="color:#9ca3af;text-align:center;padding:24px">暂无邀请码</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5" style="color:#9ca3af;text-align:center;padding:24px">${t('adminNoInvites')}</td></tr>`;
     return;
   }
   tbody.innerHTML = codes.map(c => {
     const used = !!c.used_by_email;
     const status = !c.is_active
-      ? '<span style="font-size:11px;color:#9ca3af">已撤销</span>'
+      ? `<span style="font-size:11px;color:#9ca3af">${t('inviteStatusRevoked')}</span>`
       : used
-        ? '<span class="admin-badge-user">已使用</span>'
-        : '<span class="admin-badge-admin">可用</span>';
+        ? `<span class="admin-badge-user">${t('inviteStatusUsed')}</span>`
+        : `<span class="admin-badge-admin">${t('inviteStatusAvailable')}</span>`;
     const revokeBtn = (!used && c.is_active)
-      ? `<button class="admin-action-btn danger" onclick="revokeInvite(${c.id})">撤销</button>`
+      ? `<button class="admin-action-btn danger" onclick="revokeInvite(${c.id})">${t('adminRevoke')}</button>`
       : '—';
     return `<tr>
-      <td><code style="font-size:12px;background:#f9fafb;padding:2px 6px;border-radius:4px">${c.code}</code>
-        <button onclick="copyCode('${c.code}')" style="border:none;background:none;cursor:pointer;font-size:11px;color:#6366f1;margin-left:4px">复制</button>
+      <td><code style="font-size:12px;background:#f9fafb;padding:2px 6px;border-radius:4px">${esc(c.code)}</code>
+        <button onclick="copyCode('${esc(c.code)}')" style="border:none;background:none;cursor:pointer;font-size:11px;color:#6366f1;margin-left:4px">${t('adminCopy')}</button>
       </td>
       <td>${status}</td>
-      <td style="font-size:12px;color:#6b7280">${c.used_by_email || '—'}</td>
+      <td style="font-size:12px;color:#6b7280">${c.used_by_email ? esc(c.used_by_email) : '—'}</td>
       <td style="font-size:12px;color:#9ca3af">${c.used_at ? c.used_at.slice(0,10) : '—'}</td>
       <td>${revokeBtn}</td>
     </tr>`;
@@ -1251,12 +1949,75 @@ async function createInviteCode() {
 }
 
 async function revokeInvite(id) {
-  if (!confirm('确认撤销此邀请码？')) return;
+  if (!confirm(t('adminRevokeConfirm'))) return;
   const res = await apiFetch(`/admin/invite-codes/${id}`, { method: 'DELETE' });
   if (res && res.ok) await refreshInviteTable();
 }
 
+// ── Feedback ──
+
+function openDonate() {
+  document.getElementById('donateOverlay').classList.add('open');
+}
+
+function openFeedback() {
+  document.getElementById('f-feedback-content').value = '';
+  document.getElementById('feedbackSuccess').style.display = 'none';
+  document.getElementById('feedbackForm').style.display = 'block';
+  document.getElementById('btnFeedbackSubmit').disabled = false;
+  document.getElementById('btnFeedbackSubmit').textContent = t('feedbackSubmit');
+  document.getElementById('feedbackOverlay').classList.add('open');
+}
+
+function closeFeedback() {
+  document.getElementById('feedbackOverlay').classList.remove('open');
+}
+
+async function submitFeedback() {
+  const content = document.getElementById('f-feedback-content').value.trim();
+  if (!content) { alert(t('feedbackRequired')); return; }
+
+  const btn = document.getElementById('btnFeedbackSubmit');
+  btn.disabled = true;
+  btn.textContent = t('feedbackSubmitting');
+
+  const res = await apiFetch('/feedback', {
+    method: 'POST',
+    body: JSON.stringify({ category: 'other', content })
+  });
+
+  if (res && res.ok) {
+    document.getElementById('feedbackForm').style.display = 'none';
+    document.getElementById('feedbackSuccess').style.display = 'block';
+    setTimeout(closeFeedback, 1800);
+  } else {
+    btn.disabled = false;
+    btn.textContent = t('feedbackSubmit');
+    alert(t('feedbackFailed'));
+  }
+}
+
+async function refreshFeedbackTable() {
+  const res = await apiFetch('/admin/feedback');
+  if (!res) return;
+  const rows = await res.json();
+  const tbody = document.getElementById('feedbackTableBody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="3" style="color:#9ca3af;text-align:center;padding:24px">${t('adminNoFeedback')}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const date = r.created_at ? r.created_at.slice(0, 10) : '—';
+    return `<tr>
+      <td style="font-size:12px;color:#6b7280;white-space:nowrap">${esc(r.email)}</td>
+      <td style="font-size:13px;color:#111827;max-width:380px;word-break:break-word">${esc(r.content)}</td>
+      <td style="font-size:12px;color:#9ca3af;white-space:nowrap">${date}</td>
+    </tr>`;
+  }).join('');
+}
+
 // ── Init ──
+applyLang();
 if (getToken()) {
   showApp();
 } else {

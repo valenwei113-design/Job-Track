@@ -41,3 +41,11 @@ CREATE TABLE IF NOT EXISTS work_permits (
     annual_salary      TEXT,
     permanent_residence TEXT
 );
+
+CREATE TABLE IF NOT EXISTS user_feedback (
+    id         SERIAL PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    category   TEXT NOT NULL DEFAULT 'other',
+    content    TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
