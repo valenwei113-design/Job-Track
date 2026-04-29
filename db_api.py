@@ -701,14 +701,17 @@ def chat(request: Request, req: ChatRequest, user_id: int = Depends(get_current_
     # Step 3: 结果 → 自然语言
     eng = _is_english(req.message)
     explain_system = EXPLAIN_SYSTEM_PROMPT_EN if eng else EXPLAIN_SYSTEM_PROMPT_ZH
-    user_content = (f"Question: {req.message}\n\nQuery result: {rows}" if eng
-                    else f"问题：{req.message}\n\n查询结果：{rows}")
+    if eng:
+        user_content = (f"Answer in English only.\n\n"
+                        f"Question: {req.message}\n\nQuery result: {rows}")
+    else:
+        user_content = f"问题：{req.message}\n\n查询结果：{rows}"
     explain_messages = [
         {"role": "system", "content": explain_system},
         {"role": "user", "content": user_content}
     ]
     explain_resp = client.chat.completions.create(
-        model="deepseek-chat", messages=explain_messages, temperature=0.3
+        model="deepseek-chat", messages=explain_messages, temperature=0
     )
     answer = explain_resp.choices[0].message.content.strip()
     return {"answer": answer, "sql": sql_or_reject}
