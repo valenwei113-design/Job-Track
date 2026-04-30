@@ -850,11 +850,11 @@
       <div id="modalForm">
       <div class="form-row">
         <label data-i18n="labelCompany"></label>
-        <input id="f-company" type="text" placeholder="e.g. Spotify">
+        <input id="f-company" type="text" data-i18n-placeholder="phCompany">
       </div>
       <div class="form-row">
         <label data-i18n="labelPosition"></label>
-        <input id="f-position" type="text" placeholder="e.g. Product Manager">
+        <input id="f-position" type="text" data-i18n-placeholder="phPosition">
       </div>
       <div class="form-row">
         <label data-i18n="labelDate"></label>
@@ -862,15 +862,15 @@
       </div>
       <div class="form-row">
         <label data-i18n="labelLocation"></label>
-        <input id="f-location" type="text" placeholder="e.g. Netherlands">
+        <input id="f-location" type="text" data-i18n-placeholder="phLocation">
       </div>
       <div class="form-row">
         <label data-i18n="labelWorkType"></label>
         <select id="f-worktype">
-          <option value="">— Select —</option>
-          <option value="Remote">Remote</option>
-          <option value="Onsite">Onsite</option>
-          <option value="Hybrid">Hybrid</option>
+          <option value="" data-i18n-opt="optSelect">— Select —</option>
+          <option value="Remote" data-i18n-opt="optRemote">Remote</option>
+          <option value="Onsite" data-i18n-opt="optOnsite">Onsite</option>
+          <option value="Hybrid" data-i18n-opt="optHybrid">Hybrid</option>
         </select>
       </div>
       <div class="form-row">
@@ -879,7 +879,7 @@
       </div>
       <div class="form-row">
         <label data-i18n="labelFeedback"></label>
-        <input id="f-feedback" type="text" list="feedback-options" placeholder="No Response / Fail / Offer...">
+        <input id="f-feedback" type="text" list="feedback-options" data-i18n-placeholder="phFeedback">
         <datalist id="feedback-options">
           <option value="">
           <option value="Fail">
@@ -890,7 +890,7 @@
       </div>
       <div class="form-row">
         <label data-i18n="labelNotes"></label>
-        <textarea id="f-notes" rows="3" placeholder="Interview notes, salary info, follow-up reminders..." style="resize:vertical;font-size:13px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;width:100%;box-sizing:border-box;font-family:inherit;color:#111827;"></textarea>
+        <textarea id="f-notes" rows="3" data-i18n-placeholder="phNotes" style="resize:vertical;font-size:13px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;width:100%;box-sizing:border-box;font-family:inherit;color:#111827;"></textarea>
       </div>
       <div class="form-actions">
         <button class="btn-cancel" onclick="closeModal()" data-i18n="btnCancel"></button>
@@ -992,6 +992,15 @@ const LANGS = {
     labelFeedback:         '进度',
     labelNotes:            '备注',
     colNotes:              '备注',
+    phCompany:             '如：字节跳动',
+    phPosition:            '如：产品经理',
+    phLocation:            '如：荷兰',
+    phFeedback:            '待回复 / 拒绝 / 录用...',
+    phNotes:               '面试笔记、薪资信息、跟进提醒...',
+    optSelect:             '— 请选择 —',
+    optRemote:             'Remote（远程）',
+    optOnsite:             'Onsite（现场）',
+    optHybrid:             'Hybrid（混合）',
     btnCancel:             '取消',
     btnSave:               '保存',
     btnUpdate:             '更新',
@@ -1153,6 +1162,15 @@ const LANGS = {
     labelFeedback:         'Progress',
     labelNotes:            'Notes',
     colNotes:              'Notes',
+    phCompany:             'e.g. Spotify',
+    phPosition:            'e.g. Product Manager',
+    phLocation:            'e.g. Netherlands',
+    phFeedback:            'No Response / Fail / Offer...',
+    phNotes:               'Interview notes, salary info, follow-up reminders...',
+    optSelect:             '— Select —',
+    optRemote:             'Remote',
+    optOnsite:             'Onsite',
+    optHybrid:             'Hybrid',
     btnCancel:             'Cancel',
     btnSave:               'Save',
     btnUpdate:             'Update',
