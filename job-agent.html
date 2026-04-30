@@ -1271,12 +1271,14 @@ function applyLang() {
   document.querySelectorAll('[data-i18n-opt]').forEach(el => {
     el.textContent = t(el.dataset.i18nOpt);
   });
-  const fbValues = ['', 'Fail', 'Offer', 'Interview', 'Online Assessment'];
+  const FB_EN = ['', 'Fail', 'Offer', 'Interview', 'Online Assessment'];
   const fbLabels = t('feedbackOptions');
+  window._fbToEn = {};
+  window._fbToDisplay = {};
+  FB_EN.forEach((en, i) => { window._fbToEn[fbLabels[i]] = en; window._fbToDisplay[en] = fbLabels[i]; });
   const dl = document.getElementById('feedback-options');
-  if (dl) {
-    dl.innerHTML = fbValues.map((v, i) => `<option value="${v}">${fbLabels[i]}</option>`).join('');
-  }
+  if (dl) dl.innerHTML = fbLabels.map(v => `<option value="${v}">`).join('');
+
   const label = currentLang === 'zh' ? 'EN' : '中';
   ['langToggle','langToggleAdmin'].forEach(id => {
     const el = document.getElementById(id);
@@ -1824,7 +1826,7 @@ function openEdit(id) {
   document.getElementById('f-date').value       = app.applied_date || '';
   document.getElementById('f-location').value  = app.location || '';
   document.getElementById('f-link').value       = app.link || '';
-  document.getElementById('f-feedback').value  = app.feedback || '';
+  document.getElementById('f-feedback').value  = (window._fbToDisplay && window._fbToDisplay[app.feedback]) || app.feedback || '';
   document.getElementById('f-worktype').value  = app.work_type || '';
   document.getElementById('f-notes').value     = app.notes || '';
   document.getElementById('imgParseArea').style.display = 'none';
@@ -1886,7 +1888,7 @@ async function saveApplication() {
     applied_date: document.getElementById('f-date').value || null,
     location:     document.getElementById('f-location').value.trim() || null,
     link:         document.getElementById('f-link').value.trim() || null,
-    feedback:     document.getElementById('f-feedback').value.trim() || null,
+    feedback:     (v => (window._fbToEn && window._fbToEn[v] !== undefined ? window._fbToEn[v] : v) || null)(document.getElementById('f-feedback').value.trim()),
     work_type:    document.getElementById('f-worktype').value || null,
     notes:        document.getElementById('f-notes').value.trim() || null,
   };
