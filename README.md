@@ -155,10 +155,10 @@
 ## 六、前端功能
 
 - **登录 / 注册**：首次访问显示认证界面；注册需邀请码；登录后 token 存入 localStorage，30 天有效
-- **主页（宅）**：登录后默认进入；显示今日日期、欢迎语、投递总数 / 录用 / 面试 / 待回复四项统计卡
-- **简历优化（文）**：上传或粘贴简历（PDF / TXT / MD）；上传或粘贴 JD；匹配分析（评分 + 技能匹配 / 缺口 / ATS 关键词）；一键优化简历（AI 生成针对性版本）；AI 对话精调简历内容；导出 Word / PDF / Markdown / TXT
-- **投递记录（录）**：图片 / 截图 AI 自动识别新增；手动新增；搜索、排序、分页（每页 30 条）；点击记录编辑；备注字段；AI 对话查询数据
-- **命运选择（签）**：选择一条申请记录，抽取 4 张塔罗牌，AI 给出玄学点评
+- **主页**：登录后默认进入；显示今日日期、欢迎语、投递总数 / 录用 / 面试 / 待回复四项统计卡
+- **简历优化**：上传或粘贴简历（PDF / TXT / MD）；上传或粘贴 JD；匹配分析（评分 + 技能匹配 / 缺口 / ATS 关键词）；一键优化简历（AI 生成针对性版本）；AI 对话精调简历内容；导出 Word / PDF / Markdown / TXT
+- **投递记录**：图片 / 截图 AI 自动识别新增；手动新增；搜索、排序、分页（每页 30 条）；点击记录编辑；备注字段；AI 对话查询数据
+- **命运选择**：选择一条申请记录，抽取 4 张塔罗牌，AI 给出玄学点评
 - **管理员后台**：用户管理（删除、切换权限、重置密码）、邀请码管理、用户反馈查看、数据概览
 
 ---
@@ -387,10 +387,10 @@ User Browser
 ## 6. Frontend Features
 
 - **Auth**: Shown on first visit; registration requires an invite code; JWT stored in localStorage for 30 days
-- **Home (宅)**: Default tab after login — today's date, welcome greeting, 4 stat cards (total / offers / interviews / pending)
-- **Resume (文)**: Upload or paste resume (PDF / TXT / MD); upload or paste JD; match analysis with score, skill gaps, and ATS keywords; one-click AI resume optimization; AI chat to refine the output; export as Word / PDF / Markdown / TXT
-- **Applications (录)**: AI image/screenshot auto-fill; manual add; search, sort by date, paginate (30/page); inline edit; notes field; AI chat to query data
-- **Fate (签)**: Select an application, draw 4 tarot cards, get an AI divination
+- **Home**: Default tab after login — today's date, welcome greeting, 4 stat cards (total / offers / interviews / pending)
+- **Resume**: Upload or paste resume (PDF / TXT / MD); upload or paste JD; match analysis with score, skill gaps, and ATS keywords; one-click AI resume optimization; AI chat to refine the output; export as Word / PDF / Markdown / TXT
+- **Applications**: AI image/screenshot auto-fill; manual add; search, sort by date, paginate (30/page); inline edit; notes field; AI chat to query data
+- **Fate**: Select an application, draw 4 tarot cards, get an AI divination
 - **Admin Panel**: User management (delete, toggle admin, reset password), invite code management, feedback list, stats overview
 
 ---
